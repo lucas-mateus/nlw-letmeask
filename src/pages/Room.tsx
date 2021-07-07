@@ -4,56 +4,58 @@ import toast, { Toaster } from 'react-hot-toast'
 import { useParams } from 'react-router-dom'
 import logoImg from '../assets/images/Logo.svg'
 import { Button } from '../components/Button'
+import { Question } from '../components/Question'
 import { RoomCode } from '../components/RoomCode'
 import { useAuth } from '../hooks/useAuth'
 import { database } from '../services/firebase'
 import '../styles/room.scss'
 
+
 type RoomParam = {
-    id:string
+    id: string
 }
 
 type FirebaseQuestions = Record<string, {
-    author:{
-        name:string,
+    author: {
+        name: string,
         avatar: string
     },
     content: string,
     isHighlighted: boolean,
-    isAnswered: boolean 
+    isAnswered: boolean
 }>
 
-type Question = {
-    id:string,
-    author:{
-        name:string,
+type QuestionType = {
+    id: string,
+    author: {
+        name: string,
         avatar: string
     },
     content: string,
     isHighlighted: boolean,
-    isAnswered: boolean 
+    isAnswered: boolean
 
 }
 
-export function Room(){
-    const {user} = useAuth();
+export function Room() {
+    const { user } = useAuth();
     const [newQuestion, setNewQuestion] = useState('');
     const params = useParams<RoomParam>();
     const roomId = params.id;
     const [title, setTitle] = useState('');
-    const [questions, setQuestions] = useState<Question[]>([]);
+    const [questions, setQuestions] = useState<QuestionType[]>([]);
 
 
-    useEffect(()=> {
+    useEffect(() => {
         const roomRef = database.ref(`rooms/${roomId}`);
 
-        roomRef.on('value', room =>{
+        roomRef.on('value', room => {
             const databaseRoom = room.val();
-            const firebaseQuestions:FirebaseQuestions = databaseRoom.questions ?? {}
+            const firebaseQuestions: FirebaseQuestions = databaseRoom.questions ?? {}
 
-            const parsedQuestions = Object.entries(firebaseQuestions).map(([key, value]) =>{
+            const parsedQuestions = Object.entries(firebaseQuestions).map(([key, value]) => {
                 return {
-                    id:key,
+                    id: key,
                     content: value.content,
                     author: value.author,
                     isHighlighted: value.isHighlighted,
@@ -66,21 +68,21 @@ export function Room(){
         })
     }, [roomId]);
 
-    async function handleSendQuestion(event:FormEvent) {
+    async function handleSendQuestion(event: FormEvent) {
         event.preventDefault();
 
-        if(newQuestion.trim() === ''){
+        if (newQuestion.trim() === '') {
             toast.error('Campo está vazio!');
             return;
         }
 
-        if(!user){
-            throw new Error ("O usuário deve estar logado para enviar pergunta.")
+        if (!user) {
+            throw new Error("O usuário deve estar logado para enviar pergunta.")
         }
 
         const question = {
             content: newQuestion,
-            author:{
+            author: {
                 name: user.name,
                 avatar: user.avatar,
             },
@@ -99,26 +101,26 @@ export function Room(){
             <header>
                 <div className="content">
                     <img src={logoImg} alt="logomarca da aplicação Letmeask" />
-                    <RoomCode code={roomId}/>
+                    <RoomCode code={roomId} />
                 </div>
-                <div><Toaster/></div>
+                <div><Toaster /></div>
             </header>
 
             <main>
                 <div className="room-title">
                     <h1>Sala {title}</h1>
-                    { questions.length > 0 && <span>{questions.length} perguntas</span>}
+                    {questions.length > 0 && <span>{questions.length} perguntas</span>}
                 </div>
 
                 <form onSubmit={handleSendQuestion}>
                     <textarea
-                        onChange={event=> setNewQuestion(event.target.value)}
+                        onChange={event => setNewQuestion(event.target.value)}
                         value={newQuestion}
                         placeholder="O que você quer perguntar?"
                     />
 
                     <div className="form-footer">
-                        {   user ? (
+                        {user ? (
                             <div className="user-info">
                                 <img src={user.avatar} alt={user.name} />
                                 <p>{user.name}</p>
@@ -126,13 +128,23 @@ export function Room(){
                         ) : (
                             <span>Para enviar uma pergunta, <button>faça seu login</button></span>
                         )
-                        
+
                         }
                         <Button disabled={!user} type="submit">Enviar Pergunta</Button>
                     </div>
                 </form>
 
-                {JSON.stringify(questions)}
+                <div className="questions-list">
+                    {questions.map(question => {
+                        return (
+                            <Question
+                                key={question.id}
+                                content={question.content}
+                                author={question.author}
+                            />
+                        )
+                    })}
+                </div>
             </main>
         </div>
     )
