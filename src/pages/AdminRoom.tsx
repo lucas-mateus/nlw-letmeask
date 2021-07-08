@@ -1,5 +1,5 @@
 //import toast, { Toaster } from 'react-hot-toast'
-import { useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import logoImg from '../assets/images/Logo.svg'
 import deleteImg from '../assets/images/delete.svg'
 import { Button } from '../components/Button'
@@ -8,6 +8,7 @@ import { RoomCode } from '../components/RoomCode'
 import { useRoom } from '../hooks/useRoom'
 import '../styles/room.scss'
 import { database } from '../services/firebase'
+import { toast,Toaster } from 'react-hot-toast'
 
 
 type RoomParam = {
@@ -15,26 +16,40 @@ type RoomParam = {
 }
 
 export function AdminRoom() {
+
+    const history = useHistory();
     const params = useParams<RoomParam>();
     const roomId = params.id;
 
     const {title,questions} = useRoom(roomId);
 
+    async function handleEndingRoom() {
+        await database.ref(`rooms/${roomId}`).update({
+            endedAt: new Date(),
+        })
+
+        history.push('/')
+    }
+
+
     async function handleDeleteQuestion(questionId: string){
         if(window.confirm('Você tem certeza que deseja remover essa pergunta?')){
             await database.ref(`rooms/${roomId}/questions/${questionId}`).remove()
+            toast.success('Pergunta deletada com sucesso');
         }
     }
 
     return (
         <div id="page-room">
-          
+          <Toaster/>
             <header>
                 <div className="content">
                     <img src={logoImg} alt="logomarca da aplicação Letmeask" />
                     <div>
                         <RoomCode code={roomId} />
-                        <Button isOutlined>Encerrar sala</Button>
+                        <Button isOutlined
+                            onClick={handleEndingRoom}
+                        >Encerrar sala</Button>
                     </div>
                 </div>
             </header>

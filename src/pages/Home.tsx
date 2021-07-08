@@ -9,6 +9,7 @@ import '../styles/auth.scss'
 import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 import { database } from '../services/firebase'
+import { toast, Toaster } from 'react-hot-toast'
 
 export function Home() {
     const history = useHistory();
@@ -31,10 +32,18 @@ export function Home() {
         }
 
         const roomRef = await database.ref(`rooms/${roomCode}`).get();
+        
 
         if(!roomRef.exists()){
-            alert('Oops, parece que a sala que você está buscando não existe');
+            toast.error('Oops, parece que a sala que você está buscando não existe!');
             return;   
+        }
+
+        if(roomRef.val().endedAt){
+            toast('Desculpe, parece que essa sala já foi encerrada.', {
+                icon: '😓',
+              });
+            return;
         }
 
         history.push(`/rooms/${roomCode}`)
@@ -43,6 +52,7 @@ export function Home() {
 
     return (
         <div id="page-auth">
+            <Toaster/>
             <aside>
                 <img src={illustrationImg} alt="Ilustração que simboliza perguntas e respostas" />
                 <strong>Crie salas de Perguntas e Respostas ao-vivo</strong>
